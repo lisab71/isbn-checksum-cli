@@ -1,0 +1,16 @@
+{
+  "name": "isbn-checksum-cli",
+  "version": "0.1.0",
+  "description": "Validate and generate check digits for ISBN-10, ISBN-13/EAN-13, and UPC-A barcodes",
+  "license": "MIT",
+  "bin": {
+    "isbn-checksum": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
