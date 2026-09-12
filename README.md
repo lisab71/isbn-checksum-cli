@@ -72,6 +72,7 @@ node dist/cli.js validate 0-306-40615-2
 
 ## Status
 
-Working skeleton: validation and generation for all three formats, no test
-suite yet. See the checksum math in `src/checksum.ts` - each function has a
-short note on why its weight scheme works the way it does.
+Validation and generation for all three formats, with a test suite covering
+each one plus the X check-digit edge case. Run it with `npm test`. See the
+checksum math in `src/checksum.ts` - each function has a short note on why
+its weight scheme works the way it does.
