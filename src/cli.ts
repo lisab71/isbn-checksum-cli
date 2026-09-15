@@ -1,10 +1,12 @@
 #!/usr/bin/env node
+import { readFileSync } from 'fs';
 import { CodeType, detectType, generate, validate } from './checksum';
 
 const USAGE = `isbn-checksum - validate or generate check digits for barcodes
 
 Usage:
   isbn-checksum validate <code> [--type isbn10|isbn13|upc-a]
+  isbn-checksum validate [--type isbn10|isbn13|upc-a]   (reads codes from stdin, one per line)
   isbn-checksum generate <payload> --type isbn10|isbn13|upc-a
   isbn-checksum --help
 
@@ -14,6 +16,7 @@ Examples:
   isbn-checksum validate 036000291452
   isbn-checksum generate 030640615 --type isbn10
   isbn-checksum generate 978013595705 --type isbn13
+  cat codes.txt | isbn-checksum validate
 `;
 
 function parseType(args: string[]): CodeType | undefined {
@@ -38,12 +41,48 @@ function stripFlags(args: string[]): string[] {
   return out;
 }
 
+/** Format one line of batch output. Never throws: a bad code becomes an ERR line. */
+function formatBatchResult(line: string, type?: CodeType): { text: string; ok: boolean } {
+  try {
+    const result = validate(line, type);
+    const status = result.valid ? 'OK  ' : 'FAIL';
+    return {
+      text: `${status} ${line}  (${result.type}, check ${result.actualCheckDigit}, expected ${result.expectedCheckDigit})`,
+      ok: result.valid,
+    };
+  } catch (err) {
+    return { text: `ERR  ${line}  (${(err as Error).message})`, ok: false };
+  }
+}
+
+function runBatch(input: string, type?: CodeType): number {
+  const lines = input
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  if (lines.length === 0) {
+    console.error('no codes found on stdin');
+    return 2;
+  }
+  let anyInvalid = false;
+  for (const line of lines) {
+    const { text, ok } = formatBatchResult(line, type);
+    console.log(text);
+    if (!ok) anyInvalid = true;
+  }
+  return anyInvalid ? 1 : 0;
+}
+
 function runValidate(args: string[]): number {
   const type = parseType(args);
   const [code] = stripFlags(args);
   if (!code) {
-    console.error('validate needs a code to check, e.g. isbn-checksum validate 0-306-40615-2');
-    return 2;
+    if (process.stdin.isTTY) {
+      console.error('validate needs a code to check, e.g. isbn-checksum validate 0-306-40615-2');
+      console.error('(or pipe a list of codes on stdin, one per line)');
+      return 2;
+    }
+    return runBatch(readFileSync(0, 'utf8'), type);
   }
   const result = validate(code, type);
   console.log(`type:      ${result.type}`);
@@ -94,6 +133,6 @@ if (require.main === module) {
 }
 
 // Exported for the type-detection help path and for tests added later.
-export { main, USAGE };
+export { main, USAGE, formatBatchResult, runBatch };
 export type { CodeType };
 export { detectType };

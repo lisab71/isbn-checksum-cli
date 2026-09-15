@@ -60,6 +60,24 @@ $ isbn-checksum generate 978013595705 --type isbn13
 Exit code is `0` for a valid code, `1` for an invalid one, `2` for a usage
 error.
 
+Validate a batch of codes by piping them in, one per line, with no `<code>`
+argument. `--type` still applies to every line if given, otherwise each
+line's format is guessed from its length:
+
+```
+$ cat codes.txt
+0-306-40615-2
+036000291452
+0-306-40615-3
+$ cat codes.txt | isbn-checksum validate
+OK   0-306-40615-2  (isbn10, check 2, expected 2)
+OK   036000291452  (upc-a, check 2, expected 2)
+FAIL 0-306-40615-3  (isbn10, check 3, expected 2)
+```
+
+The exit code is `1` if any line is invalid or fails to parse, `0` if every
+line is valid.
+
 ## Building
 
 No dependencies beyond the TypeScript compiler itself:
@@ -73,6 +91,6 @@ node dist/cli.js validate 0-306-40615-2
 ## Status
 
 Validation and generation for all three formats, with a test suite covering
-each one plus the X check-digit edge case. Run it with `npm test`. See the
-checksum math in `src/checksum.ts` - each function has a short note on why
-its weight scheme works the way it does.
+each one plus the X check-digit edge case, and batch validation from stdin.
+Run it with `npm test`. See the checksum math in `src/checksum.ts` - each
+function has a short note on why its weight scheme works the way it does.
